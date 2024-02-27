@@ -1,0 +1,46 @@
+@startuml
+skinparam actorStyle awesome
+actor User
+
+[nginx]
+
+[rasa-voice-interface]
+
+[rasa]
+
+[rasa-actions]
+
+[fast-api-stt]
+
+[fast-api-tts]
+
+package etl-service {
+    [etl]
+    database elasticsearch
+    database [redis-cache]
+}
+
+package admin-service {
+    [django-admin]
+    [sqlite-to-postgres]
+    database sqlite
+    database [postgres-movies]
+}
+
+User -- [rasa-voice-interface]
+
+[rasa-voice-interface] -- rasa
+rasa -- [rasa-actions]
+rasa -- nginx
+nginx -- [fast-api-stt]
+nginx -- [fast-api-tts]
+[rasa-actions] -- elasticsearch
+
+[sqlite-to-postgres] -- sqlite
+[sqlite-to-postgres] -- [postgres-movies]
+etl -- [postgres-movies]
+etl -- elasticsearch
+etl -- [redis-cache]
+
+[django-admin] -- [postgres-movies]
+@enduml

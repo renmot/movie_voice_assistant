@@ -1,0 +1,117 @@
+version: "2.0"
+
+stories:
+  - story: greet
+    steps:
+      - user: |
+          hi!
+        intent: greet
+      - action: utter_greet
+
+  - story: query sci-fi genre
+    steps:
+    - intent: greet
+    - action: utter_greet
+    - intent: query_movies
+      entities:
+      - genre: sci-fi
+      - object_type: movie
+    - slot_was_set:
+      - object_type: movie
+    - slot_was_set:
+      - genre: sci-fi
+    - action: action_query_knowledge_base
+    - intent: know_more
+      entities:
+      - attribute: description
+      - mention: '1'
+    - slot_was_set:
+      - mention: '1'
+    - slot_was_set:
+      - attribute: description
+    - action: action_query_knowledge_base
+
+  - story: query movie by director
+    steps:
+    - intent: greet
+    - action: utter_greet
+    - intent: query_movies
+      entities:
+        - object_type: movie
+        - director: George Lucas
+    - slot_was_set:
+        - object_type: movie
+    - slot_was_set:
+        - director: George Lucas
+    - action: action_query_knowledge_base
+    - intent: goodbye
+    - action: utter_goodbye
+
+  - story: join movie and rating
+    steps:
+      - intent: query_movies
+        entities:
+          - object_type: movie
+          - director: Peter Jackson
+      - slot_was_set:
+          - object_type: movie
+      - slot_was_set:
+          - director: Peter Jackson
+      - action: action_query_knowledge_base
+      - intent: know_more
+      - slot_was_set:
+          - object_type: imdb_rating
+      - action: action_query_knowledge_base
+
+  - story: join movie and rating 2
+    steps:
+      - intent: query_movies
+        entities:
+          - object_type: movie
+          - actors_names: Martin Freeman
+      - slot_was_set:
+          - object_type: movie
+      - slot_was_set:
+          - actors_names: Martin Freeman
+      - action: action_query_knowledge_base
+      - intent: know_more
+      - slot_was_set:
+          - object_type: imdb_rating
+      - action: action_query_knowledge_base
+
+  - story: query movie and its summary
+    steps:
+      - intent: query_movies
+        entities:
+          - object_type: movie
+          - actors_names: Leonardo DiCaprio
+      - slot_was_set:
+          - object_type: movie
+      - slot_was_set:
+          - actors_names: Leonardo DiCaprio
+      - action: action_query_knowledge_base
+      - intent: know_more
+        entities:
+          - attribute: description
+      - slot_was_set:
+          - attribute: description
+      - action: action_query_knowledge_base
+  
+  - story: query movie and its summary 2
+    steps:
+      - intent: query_movies
+        entities:
+          - object_type: movie
+          - director: Wes Anderson
+      - slot_was_set:
+          - object_type: movie
+      - slot_was_set:
+          - director: Wes Anderson
+      - action: action_query_knowledge_base
+      - intent: know_more
+        entities:
+          - attribute: description
+      - slot_was_set:
+          - attribute: description
+      - action: action_query_knowledge_base
+  

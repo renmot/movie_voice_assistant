@@ -1,0 +1,168 @@
+version: '3.8'
+
+services:
+
+  postgres:
+    image: postgres:12.0-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - ./admin-service/schema_design/movies_database.sql:/docker-entrypoint-initdb.d/movies_database.sql
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      interval: 60s
+      timeout: 60s
+      retries: 60
+  
+  redis:
+    image: redis:7-alpine
+    env_file:
+      - .env
+    volumes:
+      - redis_data:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "redis-cli","ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  
+  admin-service:
+    build: ./admin-service
+    restart: always
+    volumes:
+      - static_value:/opt/app/static/
+      - media_value:/opt/app/media/
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+
+  elasticsearch:
+    image: elasticsearch:7.17.16
+    env_file:
+      - .env
+    environment:
+      - xpack.security.enabled=false
+      - discovery.type=single-node
+      - ingest.geoip.downloader.enabled=false
+    volumes:
+      - elasticsearch_data:/opt/elasticsearch/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: curl -s ${ES_DSN} >/dev/null || exit 1
+      interval: 60s
+      timeout: 15s
+      retries: 50
+  
+  etl:
+    build: ./etl-service
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  stt-api:
+    build:
+      context: ./fast-api-stt
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    healthcheck:
+      test: curl -X GET http://stt-api:8002/api/v1/stt/hc || exit 1
+      interval: 60s
+      timeout: 30s
+      retries: 30
+
+  tts-api:
+    build:
+      context: ./fast-api-tts
+    depends_on:
+      stt-api:
+        condition: service_healthy
+    healthcheck:
+      test: curl -X GET http://tts-api:8001/api/v1/tts/hc || exit 1
+      interval: 60s
+      timeout: 30s
+      retries: 30
+  
+  nginx:
+    image: nginx:latest
+    restart: always
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/configs/site.conf:/etc/nginx/conf.d/site.conf:ro
+      - static_value:/opt/app/static/
+      - media_value:/opt/app/media/
+      - /tmp/logs/nginx/:/var/log/nginx/
+    depends_on:
+      tts-api:
+        condition: service_healthy
+    ports:
+      - '127.0.0.1:80:80'
+
+  rasa:
+    build:
+      context: ./rasa
+      dockerfile: rasa.Dockerfile
+    ports:
+      - 5005:5005
+    env_file:
+      - .env
+    command:
+      - run
+      - --cors
+      - "*"
+      - --response-timeout
+      - "100000"
+      - --credentials
+      - credentials.yml
+      - --enable-api
+      - --connector
+      - socketio_connector.SocketIOInput
+      - --model
+      - ./models
+      - --debug
+    depends_on:
+      tts-api:
+        condition: service_healthy
+
+  rasa-actions:
+    build:
+      context: ./rasa
+      dockerfile: rasa-actions.Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      tts-api:
+        condition: service_healthy
+
+  rasa-voice-interface:
+    build: ./rasa-voice-interface
+    ports:
+      - '127.0.0.1:8080:8080'
+    depends_on:
+      tts-api:
+        condition: service_healthy
+
+volumes:
+  elasticsearch_data:
+  redis_data:
+  postgres_data:
+  static_value:
+  media_value:

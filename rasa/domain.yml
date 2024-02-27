@@ -1,0 +1,93 @@
+version: '2.0'
+config:
+  store_entities_as_slots: true
+session_config:
+  session_expiration_time: 600
+  carry_over_slots_to_new_session: true
+
+intents:
+  - greet:
+      use_entities: false
+  - goodbye:
+      use_entities: false
+  - query_movies:
+      use_entities: true
+  - know_more:
+      use_entities: true
+
+entities:
+  - object_type
+  - mention
+  - attribute
+  - genre
+  - director
+  - actors_names
+  - publication_year
+  - imdb_rating
+  - limit
+
+slots:
+  object_type:
+    type: rasa.shared.core.slots.TextSlot
+    initial_value: null
+    auto_fill: true
+    influence_conversation: true
+  mention:
+    type: rasa.shared.core.slots.TextSlot
+    initial_value: null
+    auto_fill: true
+    influence_conversation: false
+  attribute:
+    type: rasa.shared.core.slots.TextSlot
+    initial_value: null
+    auto_fill: true
+    influence_conversation: false
+  genre:
+    type: rasa.shared.core.slots.TextSlot
+    initial_value: null
+    auto_fill: true
+    influence_conversation: false
+  director:
+    type: rasa.shared.core.slots.TextSlot
+    initial_value: null
+    auto_fill: true
+    influence_conversation: false
+  actors_names:
+    type: rasa.shared.core.slots.TextSlot
+    initial_value: null
+    auto_fill: true
+    influence_conversation: false
+  publication_year:
+    type: rasa.shared.core.slots.TextSlot
+    initial_value: null
+    auto_fill: true
+    influence_conversation: false
+  imdb_rating:
+    type: rasa.shared.core.slots.TextSlot
+    initial_value: null
+    auto_fill: true
+    influence_conversation: false
+  limit:
+    type: rasa.shared.core.slots.FloatSlot
+    initial_value: null
+    auto_fill: true
+    influence_conversation: false
+    max_value: 1.0
+    min_value: 0.0
+
+responses:
+  utter_greet:
+    - text: Hi, how are you? What can I do for you?
+    - text: Hey! How are you? How can I help you?
+  utter_goodbye:
+    - text: Thanks for stopping by. See ya!
+    - text: Thanks. Have a good day! See you soon.
+  utter_ask_rephrase:
+    - text: Sorry, I'm not sure I understand. Can you rephrase?
+    - text: Can you please rephrase? I did not get that.
+
+actions:
+  - action_query_knowledge_base
+
+forms: {}
+e2e_actions: []
