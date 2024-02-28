@@ -1,4 +1,5 @@
 import os
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -6,6 +7,9 @@ from TTS.api import TTS
 
 from api.v1.tts.views import router as tts_router
 from models.tts import ml_models
+
+
+logger = logging.getLogger(__name__)
 
 
 # If you use the XTTS model you need to agree to CPML license https://coqui.ai/cpml
@@ -16,11 +20,11 @@ os.environ["COQUI_TOS_AGREED"] = "1"
 async def lifespan(_: FastAPI):
     # Load the TTS model
     ml_models["tts_model"] = TTS("tts_models/en/ljspeech/speedy-speech")
-    print('===TTS model is loaded===')
+    logger.info('===TTS model is loaded===')
     yield
     # Clean up the ML models and release the resources
     ml_models.clear()
-    print('===TTS model is deleted===')
+    logger.info('===TTS model is deleted===')
 
 
 app = FastAPI(

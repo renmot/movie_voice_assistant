@@ -116,7 +116,6 @@ class SocketIOInput(InputChannel):
         @sio.on('connect', namespace=self.namespace)
         async def connect(sid, environ):
             logger.debug("User {} connected to socketIO endpoint.".format(sid))
-            print('Connected!')
 
         @sio.on('disconnect', namespace=self.namespace)
         async def disconnect(sid):
@@ -125,10 +124,7 @@ class SocketIOInput(InputChannel):
 
         @sio.on('session_request', namespace=self.namespace)
         async def session_request(sid, data):
-            print('This is sessioin request')
-
             logger.debug(f"sid: {sid}, data: {data}")
-
             await sio.emit("session_confirm", sid, room=sid)
             logger.debug("User {} connected to socketIO endpoint."
                          "".format(sid))

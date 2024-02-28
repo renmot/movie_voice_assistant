@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -7,15 +8,18 @@ from api.v1.stt.views import router as stt_router
 from models.stt import ml_models
 
 
+logger = logging.getLogger(__name__)
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     ## Load the STT model
     ml_models["stt_model"] = whisper.load_model("tiny.en")
-    print('===STT model is loaded===')
+    logger.info('===STT model is loaded===')
     yield
     # Clean up the ML models and release the resources
     ml_models.clear()
-    print('===STT model is deleted===')
+    logger.info('===STT model is deleted===')
 
 
 app = FastAPI(
@@ -31,6 +35,3 @@ app = FastAPI(
 app.include_router(
     stt_router, prefix="/api/v1/stt", tags=["stt"]
 )
-
-
-

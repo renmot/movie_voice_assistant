@@ -1,9 +1,10 @@
 import os
 import shutil
 
-from fastapi import APIRouter, UploadFile
+from fastapi import APIRouter, Depends, UploadFile
 
-from models.stt import ml_models
+from services.transcription import TranscriptionService, get_transcription_service
+
 
 router = APIRouter()
 
@@ -17,8 +18,10 @@ async def healthcheck():
 
 
 @router.post("/transcribe/")
-async def transcribe(file: UploadFile):
-    stt_model = ml_models["stt_model"]
+async def transcribe(
+    file: UploadFile,
+    transcription_service: TranscriptionService = Depends(get_transcription_service)
+) -> dict:
 
     filename = file.filename
     fileobj = file.file
@@ -26,6 +29,7 @@ async def transcribe(file: UploadFile):
     upload_file = open(upload_name, 'wb+')
     shutil.copyfileobj(fileobj, upload_file)
     upload_file.close()
-    
-    result = stt_model.transcribe(upload_name)
-    return result
+
+    transcription = transcription_service.get_transcription(upload_name)
+
+    return transcription
